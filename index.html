@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ORBITAL FRONTIER — Junior Astronaut Mission Trainer</title>
+  <meta name="description" content="An immersive space mission simulation where you become the commander of a lunar or Martian research outpost. Built for the NASA Space Apps Challenge." />
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <!-- Three.js (r128) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>" />
+</head>
+<body>
+
+  <!-- ============================================================
+       DYNAMIC STARFIELD BACKGROUND (Always active)
+       ============================================================ -->
+  <div class="starfield" id="starfield"></div>
+
+  <!-- ============================================================
+       SIMULATED LAUNCH COUNTDOWN & IGNITION OVERLAY
+       ============================================================ -->
+  <div class="launch-sequence-overlay" id="launch-sequence-overlay">
+    <div class="launch-sequence-content">
+      <div class="launch-badge">NASA KENNEDY SPACE CENTER · PAD 39B</div>
+      <div class="launch-hud-countdown" id="launch-hud-countdown">T-10</div>
+      <div class="launch-status-message" id="launch-status-message">TERMINAL COUNTDOWN SEQUENCER INITIATED</div>
+      <div class="launch-telemetry-grid">
+        <div class="telemetry-cell">MAIN ENGINES: <span id="telem-engines">ARMED</span></div>
+        <div class="telemetry-cell">GUIDANCE: <span id="telem-guidance">INTERNAL</span></div>
+        <div class="telemetry-cell">RANGE SAFETY: <span id="telem-range">GREEN</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       LOADING SCREEN
+       ============================================================ -->
+  <div class="loading-screen" id="loading-screen">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Initializing Mission Control Systems...</div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN 1: FIRST PAGE — CINEMATIC SPACE EXPERIENCE
+       ============================================================ -->
+  <div class="screen active" id="landing-screen">
+    <!-- 3D Realistic Rocket & Launchpad Scene -->
+    <div class="rocket-scene" id="rocket-scene"></div>
+
+    <!-- Atmospheric & Fog Overlay -->
+    <div class="atmosphere-overlay"></div>
+
+    <!-- Top Navigation Bar on Landing Page -->
+    <div class="landing-top-bar">
+      <div class="nasa-insignia">
+        <span class="nasa-worm">NASA</span>
+        <span class="sub-agency">JUNIOR ASTRONAUT PROGRAM</span>
+      </div>
+      <div class="landing-nav-actions">
+        <button class="btn btn-secondary btn-sm" id="landing-profile-btn">
+          👤 Astronaut Profile
+        </button>
+      </div>
+    </div>
+
+    <!-- Landing Content -->
+    <div class="landing-hero">
+      <div class="landing-content animate-in">
+        <div class="landing-logo">
+          <h1 class="text-glow">ORBITAL FRONTIER</h1>
+          <div class="tagline">Your mission. Your decisions. Humanity's future.</div>
+        </div>
+        <p class="landing-subtitle">
+          Become a young astronaut. Build your outpost. Make the decisions that could save your crew.
+        </p>
+
+        <!-- Mission Entry Panel Directly on Landing Page -->
+        <div class="mission-entry-panel">
+          <h2>⬡ Mission Command Registration</h2>
+
+          <!-- Avatar Picker -->
+          <div class="avatar-selection-wrapper">
+            <div class="avatar-circle-large" id="current-selected-avatar">🧑‍🚀</div>
+            <div class="avatar-options" id="avatar-options">
+              <button class="avatar-option-btn selected" data-avatar="🧑‍🚀">🧑‍🚀</button>
+              <button class="avatar-option-btn" data-avatar="👨‍🚀">👨‍🚀</button>
+              <button class="avatar-option-btn" data-avatar="👩‍🚀">👩‍🚀</button>
+              <button class="avatar-option-btn" data-avatar="🚀">🚀</button>
+              <button class="avatar-option-btn" data-avatar="🛸">🛸</button>
+              <button class="avatar-option-btn" data-avatar="🌌">🌌</button>
+            </div>
+            <div class="avatar-caption">Select Your Callsign Avatar</div>
+          </div>
+
+          <!-- Name Input -->
+          <div class="form-group">
+            <label for="astronaut-name">Astronaut Name or Nickname <span class="required">*</span></label>
+            <input type="text" id="astronaut-name" class="form-input" placeholder="e.g. Alex, Maya, Orion..." maxlength="20" autocomplete="off" />
+            <div class="form-error" id="name-error">Please enter your astronaut name (2-20 characters)</div>
+          </div>
+
+          <!-- Age Input -->
+          <div class="form-group">
+            <label for="astronaut-age">Age (Junior Astronaut: 7–12+) <span class="required">*</span></label>
+            <input type="number" id="astronaut-age" class="form-input" placeholder="Between 7 and 12" min="7" max="99" value="10" autocomplete="off" />
+            <div class="form-error" id="age-error">Please enter a valid age (7 or older)</div>
+          </div>
+
+          <!-- On-Page Mission Selection Option -->
+          <div class="on-page-mission-select">
+            <label class="section-micro-label">Assigned Outpost Destination <span class="required">*</span></label>
+            <div class="landing-mission-cards">
+              <div class="landing-mission-card selected" data-mission="moon" id="card-moon">
+                <div class="card-radio-circle">●</div>
+                <div class="card-icon">🌙</div>
+                <div class="card-info">
+                  <div class="card-title">Mission A: Lunar Outpost</div>
+                  <div class="card-sub">Shackleton Crater · 1.3s delay · Extreme Cold</div>
+                </div>
+              </div>
+              <div class="landing-mission-card" data-mission="mars" id="card-mars">
+                <div class="card-radio-circle">○</div>
+                <div class="card-icon">🔴</div>
+                <div class="card-info">
+                  <div class="card-title">Mission B: Mars Outpost</div>
+                  <div class="card-sub">Jezero Crater · 14m delay · Dust Storms</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Difficulty Selection -->
+          <div class="form-group" style="margin-top: 14px;">
+            <label class="section-micro-label">Simulation Complexity</label>
+            <div class="difficulty-pills">
+              <button class="diff-pill selected" data-difficulty="explorer">Explorer</button>
+              <button class="diff-pill" data-difficulty="specialist">Specialist</button>
+              <button class="diff-pill" data-difficulty="commander">Commander</button>
+            </div>
+          </div>
+
+          <!-- Start Mission Button -->
+          <button class="btn btn-primary btn-large w-full" id="start-mission-btn" style="margin-top: 18px;">
+            🚀 START MISSION
+          </button>
+
+          <!-- Privacy Note -->
+          <div class="privacy-note">
+            🔒 <strong>Privacy Assured:</strong> Your profile is stored strictly inside this browser (local storage). No email, phone number, location, or account is ever required.
+          </div>
+        </div>
+
+        <!-- NASA Image Attribution / Reference Bar -->
+        <div class="nasa-attribution-strip">
+          <span>Official Resources: NASA Artemis Base Camp · NASA Mars Exploration · NASA DONKI Space Weather · NASA OSDR ECLSS</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN: CINEMATIC THIRD-PERSON ASTRONAUT EXPERIENCE
+       ============================================================ -->
+  <div class="screen" id="astronaut-experience-screen">
+    <!-- 3D Canvas Viewport -->
+    <div class="astronaut-canvas-container" id="astronaut-canvas-container"></div>
+
+    <!-- Cinematic Aspect Letterbox Bars -->
+    <div class="cinematic-letterbox letterbox-top"></div>
+    <div class="cinematic-letterbox letterbox-bottom"></div>
+
+    <!-- Cinematic Top HUD Overlay -->
+    <div class="astronaut-top-bar">
+      <div class="astro-brand">
+        <span class="astro-badge">EVA PROTOCOL · LAUNCHPAD 39B</span>
+        <span class="astro-sub" id="astro-mission-label">MISSION 01: FLIGHT INGRESS</span>
+      </div>
+      <div class="astro-controls-group">
+        <button class="icon-btn tooltip" data-tooltip="Audio Mute" id="astro-sound-btn">🔊</button>
+        <button class="icon-btn tooltip" data-tooltip="Toggle Camera" id="astro-cam-btn" style="display: none;">🎥 Exterior Cam</button>
+        <button class="btn btn-primary btn-sm" id="astro-ops-btn" style="display: none;">🛰️ Outpost Operations</button>
+        <button class="icon-btn tooltip" data-tooltip="Exit to Launchpad" id="astro-exit-btn">🏠</button>
+      </div>
+    </div>
+
+    <!-- Story Milestones Notification Banner -->
+    <div class="astronaut-story-banner" id="astronaut-story-banner">
+      <!-- Filled dynamically by astronautExperience.js -->
+    </div>
+
+    <!-- Contextual Action Interaction Pill -->
+    <div class="astronaut-action-prompt" id="astronaut-action-prompt">
+      <!-- e.g. PRESS [E] — ENTER SPACECRAFT -->
+    </div>
+
+    <!-- Educational NASA Inspection Popout Card -->
+    <div class="astronaut-inspection-card" id="astronaut-inspection-card">
+      <div class="inspection-header">
+        <div>
+          <div class="inspection-subtitle" id="inspection-subtitle">TELEMETRY DATA</div>
+          <div class="inspection-title" id="inspection-title">SYSTEM TITLE</div>
+        </div>
+        <button class="modal-close" id="inspection-close-btn">✕</button>
+      </div>
+      <div class="inspection-body">
+        <p id="inspection-text"></p>
+      </div>
+      <div class="inspection-footer">
+        <span class="inspection-dismiss">Press [ESC] or [E] to resume exploration</span>
+      </div>
+    </div>
+
+    <!-- Subdued Bottom Controls Guide -->
+    <div class="astronaut-controls-hint" id="astronaut-controls-hint">
+      <span>[W A S D] Move</span>
+      <span>[SHIFT] Run</span>
+      <span>[MOUSE] Look</span>
+      <span>[E] Interact</span>
+    </div>
+
+    <!-- Optional Mobile Touch Controls -->
+    <div class="touch-joystick-zone" id="touch-joystick-zone">
+      <div class="touch-joystick-base">
+        <div class="touch-joystick-knob" id="touch-joystick-knob"></div>
+      </div>
+    </div>
+    <div class="touch-look-zone" id="touch-look-zone"></div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN 2: MISSION DASHBOARD (MISSION CONTROL)
+       ============================================================ -->
+  <div class="screen" id="dashboard-screen">
+    <div class="dashboard-layout">
+      <!-- TOP COMMAND BAR -->
+      <div class="top-bar">
+        <div class="top-bar-left">
+          <span class="top-bar-logo">ORBITAL FRONTIER</span>
+          <div class="top-bar-player">
+            <div class="top-bar-avatar" id="dash-avatar">🧑‍🚀</div>
+            <span class="top-bar-name" id="dash-player-name">Welcome aboard, Commander Alex!</span>
+          </div>
+        </div>
+        <div class="top-bar-center">
+          <div class="mission-info-tag" id="dash-mission-tag">
+            <span>🌙</span>
+            <span id="dash-mission-location">Lunar Outpost</span>
+          </div>
+          <div class="day-counter">
+            SOL / DAY <span id="dash-day">1</span>/10
+          </div>
+          <div class="mission-info-tag" id="dash-difficulty-tag">
+            EXPLORER
+          </div>
+        </div>
+        <div class="top-bar-right">
+          <button class="icon-btn tooltip" data-tooltip="Audio Mute" id="sound-btn">🔊</button>
+          <button class="icon-btn tooltip" data-tooltip="Astronaut Profile" id="dash-profile-btn">👤</button>
+          <button class="icon-btn tooltip" data-tooltip="Exit to Launchpad" id="dash-exit-btn">🏠</button>
+        </div>
+      </div>
+
+      <!-- LEFT PANEL: 3 CORE RESOURCE PILLARS -->
+      <div class="left-panel" id="left-panel">
+        <!-- PILLAR 1: LIFE SUPPORT -->
+        <div class="resource-section">
+          <div class="resource-section-title">
+            <span class="status-dot ok" id="life-support-status"></span>
+            ❤️ 1. Life Support Systems
+          </div>
+
+          <div class="resource-bar-container">
+            <div class="resource-bar-label">
+              <span class="label">💨 Oxygen Reserve</span>
+              <span class="value" id="oxygen-value">85%</span>
+            </div>
+            <div class="resource-bar">
+              <div class="resource-bar-fill oxygen" id="oxygen-bar" style="width: 85%"></div>
+            </div>
+          </div>
+
+          <div class="resource-bar-container">
+            <div class="resource-bar-label">
+              <span class="label">💧 Water Recycling</span>
+              <span class="value" id="water-value">78%</span>
+            </div>
+            <div class="resource-bar">
+              <div class="resource-bar-fill water" id="water-bar" style="width: 78%"></div>
+            </div>
+          </div>
+
+          <div class="resource-bar-container">
+            <div class="resource-bar-label">
+              <span class="label">🍎 Food Rations</span>
+              <span class="value" id="food-value">70%</span>
+            </div>
+            <div class="resource-bar">
+              <div class="resource-bar-fill food" id="food-bar" style="width: 70%"></div>
+            </div>
+          </div>
+
+          <div class="resource-bar-container">
+            <div class="resource-bar-label">
+              <span class="label">❤️ Crew Health</span>
+              <span class="value" id="health-value">95%</span>
+            </div>
+            <div class="resource-bar">
+              <div class="resource-bar-fill health" id="health-bar" style="width: 95%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PILLAR 2: ELECTRICAL POWER BUDGETING -->
+        <div class="resource-section">
+          <div class="resource-section-title">
+            <span class="status-dot ok" id="power-status"></span>
+            ⚡ 2. Electrical Power Grid
+          </div>
+
+          <div class="resource-bar-container">
+            <div class="resource-bar-label">
+              <span class="label">🔋 Battery Storage</span>
+              <span class="value" id="power-value">90%</span>
+            </div>
+            <div class="resource-bar">
+              <div class="resource-bar-fill power" id="power-bar" style="width: 90%"></div>
+            </div>
+          </div>
+
+          <div class="power-sub-metrics">
+            <div class="metric-row">
+              <span>☀️ Photovoltaic Generation</span>
+              <span id="solar-gen-value" class="highlight-yellow">+8 kW</span>
+            </div>
+            <div class="metric-row">
+              <span>📉 Baseload Draw</span>
+              <span id="power-consumption-value" class="highlight-red">-13 kW</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- PILLAR 3: RADIATION & SPACE WEATHER -->
+        <div class="resource-section">
+          <div class="resource-section-title">
+            <span class="status-dot ok" id="radiation-status"></span>
+            ☢️ 3. Radiation & Shielding
+          </div>
+
+          <div class="resource-bar-container">
+            <div class="resource-bar-label">
+              <span class="label">☢️ Cumulative Dose</span>
+              <span class="value" id="radiation-value">12%</span>
+            </div>
+            <div class="resource-bar">
+              <div class="resource-bar-fill radiation" id="radiation-bar" style="width: 12%"></div>
+            </div>
+          </div>
+
+          <div class="power-sub-metrics">
+            <div class="metric-row">
+              <span>🛡️ Deflection Shield</span>
+              <span id="shielding-value" class="highlight-cyan">Level 1 Active</span>
+            </div>
+            <div class="metric-row">
+              <span>🌱 Greenhouse Biomass</span>
+              <span id="greenhouse-value" class="highlight-green">Level 1 (Seedling)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- EXPANDABLE SCIENCE & MORALE -->
+        <div class="resource-section">
+          <div class="resource-section-title">
+            📊 Mission Research & Morale
+          </div>
+
+          <div class="resource-bar-container">
+            <div class="resource-bar-label">
+              <span class="label">🔬 Scientific Discoveries</span>
+              <span class="value" id="research-value">0 pts</span>
+            </div>
+            <div class="resource-bar">
+              <div class="resource-bar-fill research" id="research-bar" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div class="resource-bar-container">
+            <div class="resource-bar-label">
+              <span class="label">😊 Crew Morale</span>
+              <span class="value" id="morale-value">50 / 50</span>
+            </div>
+            <div class="resource-bar">
+              <div class="resource-bar-fill morale" id="morale-bar" style="width: 100%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CENTER PANEL: 3D OUTPOST & DAILY DECISION EVENT CARD -->
+      <div class="center-panel">
+        <!-- 3D Outpost Visualization -->
+        <div class="environment-view" id="environment-view">
+          <canvas id="environment-canvas"></canvas>
+          <div class="environment-overlay" id="building-buttons">
+            <button class="outpost-building-btn" data-building="habitat">🏠 Habitat</button>
+            <button class="outpost-building-btn" data-building="solar">☀️ Solar Arrays</button>
+            <button class="outpost-building-btn" data-building="greenhouse">🌱 Greenhouse</button>
+            <button class="outpost-building-btn" data-building="lab">🔬 Science Lab</button>
+            <button class="outpost-building-btn" data-building="comm">📡 Comms Dish</button>
+            <button class="outpost-building-btn" data-building="shelter">🛡️ Storm Shelter</button>
+          </div>
+        </div>
+
+        <!-- Interactive Event & Decision Area -->
+        <div class="event-area" id="event-area">
+          <div id="event-container">
+            <!-- Event injected by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL: ACTIVITY LOG & DELAYED COMMS -->
+      <div class="right-panel">
+        <div class="activity-log" id="activity-log">
+          <div class="activity-log-title">📋 Outpost Telemetry & History</div>
+          <div id="log-entries">
+            <!-- Log items injected by JS -->
+          </div>
+        </div>
+
+        <!-- Simulated Radio Delay & Earth Uplink -->
+        <div class="comm-panel" id="comm-panel">
+          <div class="comm-panel-title">📡 Earth Deep Space Network</div>
+          <div id="comm-messages">
+            <div class="comm-message">
+              <span class="comm-from">HOUSTON MISSION CONTROL (NASA)</span>
+              Telemetry lock confirmed. We are monitoring your outpost from Johnson Space Center.
+            </div>
+          </div>
+          <button class="btn btn-secondary w-full" id="send-comm-btn" style="margin-top: 8px; font-size: 0.75rem; padding: 10px;">
+            📡 Send Message to Earth
+          </button>
+          <div class="comm-delay-note" id="comm-delay-note">Signal delay: ~1.3 seconds</div>
+        </div>
+
+        <!-- Daily Cycle Control -->
+        <div class="day-advance-section">
+          <button class="btn btn-primary w-full" id="advance-day-btn">
+            ▶ ADVANCE TO NEXT MISSION DAY
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN 3: COMPREHENSIVE ASTRONAUT PROFILE SYSTEM
+       ============================================================ -->
+  <div class="screen" id="profile-screen">
+    <div class="starfield"></div>
+    <div class="profile-container">
+      <div class="profile-header animate-in">
+        <div class="profile-avatar-large" id="profile-avatar-display">🧑‍🚀</div>
+        <h1 id="profile-name">Commander Alex</h1>
+        <div class="profile-rank" id="profile-rank">Cadet Astronaut</div>
+        <div class="profile-welcome-tag" id="profile-welcome-tag">Welcome aboard, Commander Alex!</div>
+      </div>
+
+      <!-- 11 Essential Tracking Parameters in Grid -->
+      <div class="profile-stats-grid stagger-children" id="profile-stats">
+        <div class="profile-stat">
+          <div class="stat-value" id="prof-stat-age">10</div>
+          <div class="stat-label">Astronaut Age</div>
+        </div>
+        <div class="profile-stat">
+          <div class="stat-value" id="prof-stat-rank">Cadet Astronaut</div>
+          <div class="stat-label">Astronaut Rank</div>
+        </div>
+        <div class="profile-stat">
+          <div class="stat-value" id="prof-stat-completed">0</div>
+          <div class="stat-label">Missions Completed</div>
+        </div>
+        <div class="profile-stat">
+          <div class="stat-value" id="prof-stat-current">Moon (Shackleton)</div>
+          <div class="stat-label">Current Mission</div>
+        </div>
+        <div class="profile-stat">
+          <div class="stat-value" id="prof-stat-rate">100%</div>
+          <div class="stat-label">Mission Success Rate</div>
+        </div>
+        <div class="profile-stat">
+          <div class="stat-value" id="prof-stat-science">0 pts</div>
+          <div class="stat-label">Total Discoveries</div>
+        </div>
+        <div class="profile-stat">
+          <div class="stat-value" id="prof-stat-highscore">0 / 100</div>
+          <div class="stat-label">Highest Score</div>
+        </div>
+        <div class="profile-stat">
+          <div class="stat-value" id="prof-stat-survival">10 Days (100%)</div>
+          <div class="stat-label">Best Survival Record</div>
+        </div>
+      </div>
+
+      <!-- Earned Achievements and Badges -->
+      <div class="achievements-section animate-in">
+        <h2>🏅 Earned Achievements & NASA Science Badges</h2>
+        <div class="achievements-grid" id="profile-achievements-grid">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+
+      <!-- Mission History Log -->
+      <div class="decision-history animate-in">
+        <h2>📜 Outpost Expedition History</h2>
+        <div id="mission-history-entries">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+
+      <!-- Profile Actions -->
+      <div class="results-actions" style="margin-top: 32px;">
+        <button class="btn btn-primary" id="profile-resume-btn">🚀 Resume Mission</button>
+        <button class="btn btn-secondary" id="profile-back-btn">← Back to Dashboard</button>
+        <button class="btn btn-danger" id="reset-profile-btn">🗑️ Delete & Reset Profile</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN 4: MISSION RESULTS & NASA SCIENTIFIC REPORT
+       ============================================================ -->
+  <div class="screen" id="results-screen">
+    <div class="starfield"></div>
+    <div class="results-container">
+      <div class="results-header animate-in">
+        <div class="result-icon" id="result-icon">🏆</div>
+        <h1 id="result-title" class="success">Mission Evaluation Complete!</h1>
+        <p id="result-subtitle">Your decisions ensured the survival and success of the outpost.</p>
+      </div>
+
+      <!-- 100-Point Score Circle -->
+      <div class="score-circle-container animate-in">
+        <div class="score-circle" id="score-circle" style="--score: 0">
+          <div class="score-value">
+            <span id="score-number">0</span>
+            <small>/100</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Score Breakdown -->
+      <div class="results-grid stagger-children" id="results-stats">
+        <!-- Filled by JS -->
+      </div>
+
+      <!-- Unlocked Badges -->
+      <div class="achievements-section animate-in">
+        <h2>🏅 Mission Badges Conferred</h2>
+        <div class="achievements-grid" id="achievements-grid">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+
+      <!-- Decision Trail -->
+      <div class="decision-history animate-in">
+        <h2>📋 Decision Consequence Audit Trail</h2>
+        <div id="decision-history-entries">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+
+      <!-- NASA Data Section -->
+      <div class="nasa-data-section animate-in">
+        <h2>🔭 Official NASA Science Data & Research Citations</h2>
+        <div id="nasa-data-entries">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="results-actions">
+        <button class="btn btn-primary btn-large" id="replay-mission-btn">🔄 Replay Mission</button>
+        <button class="btn btn-secondary" id="new-mission-btn">🚀 Return to Launchpad</button>
+        <button class="btn btn-secondary" id="results-profile-btn">👤 View Profile Dashboard</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       FACILITY INSPECTION MODAL
+       ============================================================ -->
+  <div class="modal-overlay" id="building-modal">
+    <div class="modal-content">
+      <button class="modal-close" id="modal-close-btn">✕</button>
+      <h2 id="modal-title" style="font-size: 1.15rem; color: white; margin-bottom: 4px;">Building</h2>
+      <div id="modal-subtitle" style="font-family: var(--font-display); font-size: 0.65rem; color: var(--cyan-dim); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 16px;">FACILITY STATUS</div>
+      <div id="modal-content">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCRIPTS (Modular, Client-side ES5/ES6, Zero Build Tools)
+       ============================================================ -->
+  <script src="js/gameEngine.js"></script>
+  <script src="js/eventSystem.js"></script>
+  <script src="js/missionScoring.js"></script>
+  <script src="js/nasaData.js"></script>
+  <script src="js/rocketScene.js"></script>
+  <script src="js/environmentScene.js"></script>
+  <script src="js/astronautExperience.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
